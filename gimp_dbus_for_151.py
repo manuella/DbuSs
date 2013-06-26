@@ -29,6 +29,9 @@ gimp =  dbus.Interface(gimpProxy, 'edu.grinnell.cs.glimmer.pdb')
 #Preconditions: the string for brush is case-sensitive
 #Postconditions: the error message pops up in GIMP and informs you that
 #                it does not exist.
+
+
+
 def is_valid_brush(brush):
     if (gimp.gimp_brush_is_generated(brush)):
         return True
