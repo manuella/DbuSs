@@ -4,48 +4,20 @@ import math
 import os.path
 import time
 import struct
+import inspect
 session = dbus.SessionBus()
 gimpProxy = session.get_object('edu.grinnell.cs.glimmer.GimpDBus', 
                                 '/edu/grinnell/cs/glimmer/gimp')
 gimp =  dbus.Interface(gimpProxy, 'edu.grinnell.cs.glimmer.pdb')
 
-#Procedure:
-#Parameters:
-#Purpose:
-#Produces:
-#Preconditions:
-#Postconditions:
-
-
 # *************************************************************************
 # *                               BRUSHES                                 *
 # *************************************************************************
 
-
-#Procedure: is_valid_brush
-#Parameters: brush, a string
-#Purpose: to check to see if the brush exists in GIMP
-#Produces: result, True or an error message 
-#Preconditions: the string for brush is case-sensitive
-#Postconditions: the error message pops up in GIMP and informs you that
-#                it does not exist.
-
-
-
-def is_valid_brush(brush):
-    if (gimp.gimp_brush_is_generated(brush)):
-        return True
-    #Procedure:
-    #Parameters:
-    #Purpose:
-    #Produces:
-    #Preconditions:
-    #Postconditions:#Procedure:
-#Parameters:
-#Purpose:
-#Produces:
-#Preconditions:
-#Postconditions:
+#Procedure: context_get_brush
+#Parameters: [none]
+#Purpose: to get the current brush that gimp is using
+#Produces: A string, the name of the current brush
 
 def context_get_brush():
     return gimp.gimp_context_get_brush()
@@ -56,40 +28,37 @@ def context_get_brush():
 #Produces: brush, the specified brush
 #Preconditions: brush exists in GIMP
 #Postconditions: GIMP's current brush is now set to specified brush
+
 def context_set_brush(brush):
     if (not(is_valid_brush(brush))):
         raise TypeError("Invalid parameter: " + brush)
     else:
         gimp.gimp_brushes_set_brush(brush)
-        
 
+#Procedure: is_valid_brush
+#Parameters: brush, a string
+#Purpose: to check to see if the brush exists in GIMP
+#Produces: result, True or an error message 
+#Preconditions: the string for brush is case-sensitive
+#Postconditions: the error message pops up in GIMP and informs you that
+#                it does not exist.
 
-#Procedure:
-#Parameters:
-#Purpose:
-#Produces:
-#Preconditions:
-#Postconditions:
-#def context_list_brushes():
-
-#Procedure:
-#Parameters:
-#Purpose:
-#Produces:
-#Preconditions:
-#Postconditions:
-
-
-
-
+def is_valid_brush(brush):
+    status = error_arity(is_valid_brush, brush)
+    if status != True: # This is the closest exception I could find to arity
+        raise TypeError(status)
+    if (gimp.gimp_brush_is_generated(brush)):
+        return True
 # *************************************************************************
 # *                               DRAWINGS                                *
 # *************************************************************************
 
-
 #Procedure: drawing_bottom
 #Parameters: drawing, a drawing
-#Purpose: get the bottom edge of drawing
+#Purpose: find the bottom edge of drawing
+#Produces: If drawing is a valid drawing: bottom, an int
+#          Otherwise: A string (error) detailing the input error
+
 def drawing_bottom(drawing):
     if(drawing_validate(drawing) == True):
         return drawing_top(drawing) + drawing_height(drawing)
@@ -99,39 +68,45 @@ def drawing_bottom(drawing):
 #Procedure: drawing_brush
 #Parameters: drawing, a drawing
 #Purpose: get the brush associated with the drawing
-#Produces: brush, a string
+#Produces: If drawing is valid: brush, a string
+#          Otherise: an exception (error) detailing the input error
+
 def drawing_brush (drawing):
     if(drawing_validate(drawing) == True):
         return drawing[3]
     else:
         raise TypeError("drawing_brush: Given parameter is not a drawing.")        
 
-
 #Procedure: drawing_color
 #Parameters: drawing, a drawing
 #Purpose: get the color of the drawing
-#Produces: type, an RGB color
+#Produces: If drawing is valid: a color, an int
+#          Otherise: An exception (error) detailing the input error
+
 def drawing_color (drawing):
     if(drawing_validate(drawing) == True):
         return drawing[2]
     else:
         raise TypeError("drawing_color: Given parameter is not a drawing.")        
 
-
 #Procedure: drawing_compose
 #Parameters: list_of_drawings, a list of drawings
 #Purpose: create a new drawing by composing the drawings in drawings
-#Produces: composed, a drawing
+#Produces: If drawing is valid: composed, a drawing 
+#          Otherise: An exception (error) detailing the input error
+
 def drawing_compose (list_of_drawings):
     drawings = []
     i = 0
     for x in list_of_drawings:
+        if drawing_validate(list_of_drawings[i]) == False:
+            raise TypeError("drawing_compose: one or more elements are not drawings")
         drawings.append(list_of_drawings[i])
         i = i + 1
     return ["drawing", "group", drawings]
 
 
-#Procedure: drawing_ellipse
+#Procedure:  drawing_ellipse
 #Parameters: left, a real number
 #            top, a real number
 #            width, a postive real number
@@ -194,6 +169,8 @@ def drawing_group_render(drawing, image):
 #Procedure: drawing_height
 #Parameters: drawing, a drawing
 #Purpose: get the height of a drawing
+#Produces: If drawing is valid drawing, an int: height of the drawing
+#          Otherwise: returns an exception
 def drawing_height (drawing):
     if(drawing_validate(drawing) == True):
         return drawing[7]
@@ -294,6 +271,7 @@ def drawing_join(drawing1, drawing2):
 #Parameters: drawing, a drawing
 #Purpose: find the left edge of the drawing 
 #Produces: left, a real
+
 def drawing_left(drawing):
     if(drawing_validate(drawing) == True):
         return drawing[4]
@@ -467,19 +445,20 @@ def drawing_shape_render(drawing, image):
         image_select_none(image)
     else:
         raise TypeError("drawing_shape_render: Arguments must be a drawing"
-                        + "and an image")             
+                        + "and an image")
 
 
 #Procedure: drawing_top
 #Parameters: drawing, a drawing
 #Purpose: find the top edge of the drawing
-#Produces: top, a real
+#Produces: If drawing is a valid drawing: top, an int
+#          Otherwise: A string detailing the input error
+
 def drawing_top (drawing):
     if(drawing_validate(drawing) == True):
         return drawing[5]
     else:
-        raise TypeError("drawing_top: Given parameter is not a drawing.")       
-
+        raise TypeError("drawing_top: Given parameter is not a drawing.")                    
 
 #Procedure: drawing_type
 #Parameters: drawing, a drawing
@@ -519,7 +498,6 @@ def drawing_type_validate(drawing_type):
     else:
         return False
 
-
 #Procedure: drawing_validate
 #Parameters: drawing, a value
 #Purpose: determine whether drawing can be interpreted as a drawing
@@ -543,42 +521,7 @@ def drawing_validate(drawing):
     else:
         False
 
-
-#Procedure: drawing_vshift
-#Parameters: drawing, a drawing
-#            factor, a real number
-#Purpose: create a new version of drawing that is vertically shifted
-#         by the specified factor
-#Produces: shifted, a drawing
-#Preconditions: drawing is a valid drawing
-#Postconditions: scaled is the same overall "shape", color, and size as
-#                drawing, but is shifted down by factor or up if factor 
-#                is negative
-def drawing_vshift(drawing, factor):
-    if(drawing_validate(drawing) == True):
-            if(drawing_type(drawing) == "group"):
-                shifted = []
-                drawings = drawing_members(drawing)
-                i = 0
-                for x in drawings:
-                    shifted.append(drawing_vshift(drawings[i], factor))
-                    i = i + 1
-                return shifted
-            elif(drawing_type(drawing) == "ellipse" or
-                 drawing_type(drawing) == "rectangle"):
-                shape = drawing_type(drawing)
-                return drawing_shape(shape, drawing_color(drawing), 
-                                     drawing_brush(drawing),
-                                     drawing_left(drawing),
-                                     drawing_top(drawing) + factor,
-                                     drawing_width(drawing),
-                                     drawing_height(drawing))
-            else:
-                raise TypeError("Unknown drawing type, cannot shift.")        
-                
-    else:
-        raise TypeError("drawing_vscale: arguments must be a valid drawing"
-                            + " and a real number as the shift factor")    
+  
 
 
 #Procedure: drawing_vscale
@@ -616,6 +559,41 @@ def drawing_vscale(drawing, factor):
         raise TypeError("drawing_vscale: arguments must be a valid drawing" +
                         " and a real number as the scale factor")
 
+#Procedure: drawing_vshift
+#Parameters: drawing, a drawing
+#            factor, a real number
+#Purpose: create a new version of drawing that is vertically shifted
+#         by the specified factor
+#Produces: shifted, a drawing
+#Preconditions: drawing is a valid drawing
+#Postconditions: scaled is the same overall "shape", color, and size as
+#                drawing, but is shifted down by factor or up if factor 
+#                is negative
+def drawing_vshift(drawing, factor):
+    if(drawing_validate(drawing) == True):
+            if(drawing_type(drawing) == "group"):
+                shifted = []
+                drawings = drawing_members(drawing)
+                i = 0
+                for x in drawings:
+                    shifted.append(drawing_vshift(drawings[i], factor))
+                    i = i + 1
+                return shifted
+            elif(drawing_type(drawing) == "ellipse" or
+                 drawing_type(drawing) == "rectangle"):
+                shape = drawing_type(drawing)
+                return drawing_shape(shape, drawing_color(drawing), 
+                                     drawing_brush(drawing),
+                                     drawing_left(drawing),
+                                     drawing_top(drawing) + factor,
+                                     drawing_width(drawing),
+                                     drawing_height(drawing))
+            else:
+                raise TypeError("Unknown drawing type, cannot shift.")        
+                
+    else:
+        raise TypeError("drawing_vscale: arguments must be a valid drawing"
+                            + " and a real number as the shift factor")  
 
 #Procedure: drawing_width
 #Parameters: drawing, a drawing 
@@ -1484,17 +1462,8 @@ class Turtle:
     def turtle_color(self, color):
         self.color = color
 
+
     
-    
-        
-            
-
-
-
-            
-            
-        
-        
         
     
     
